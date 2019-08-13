@@ -33,90 +33,60 @@ public class PhonecallReceiver extends BroadcastReceiver {
         //We listen to two intents.  The new outgoing call only tells us of an outgoing call.  We use it to get the number.
         if (intent.getAction().equals("android.intent.action.NEW_OUTGOING_CALL")) {
             savedNumber = intent.getExtras().getString("android.intent.extra.PHONE_NUMBER");
-        }
-        else{
+        } else if (!intent.hasExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)){
+            Log.d(TAG, "No Incoming Number!");
+            return;
+        } else{
             String stateStr = intent.getExtras().getString(TelephonyManager.EXTRA_STATE);
             String number = intent.getExtras().getString(TelephonyManager.EXTRA_INCOMING_NUMBER);
+
+
+
             int state = 0;
             if(stateStr.equals(TelephonyManager.EXTRA_STATE_IDLE)){
                 state = TelephonyManager.CALL_STATE_IDLE;
-            }
-            else if(stateStr.equals(TelephonyManager.EXTRA_STATE_OFFHOOK)){
+            } else if(stateStr.equals(TelephonyManager.EXTRA_STATE_OFFHOOK)){
                 state = TelephonyManager.CALL_STATE_OFFHOOK;
-            }
-            else if(stateStr.equals(TelephonyManager.EXTRA_STATE_RINGING)){
+            } else if(stateStr.equals(TelephonyManager.EXTRA_STATE_RINGING)){
                 state = TelephonyManager.CALL_STATE_RINGING;
             }
-
 
             onCallStateChanged(context, intent, state, number);
         }
     }
 
-    //Derived classes should override these to respond to specific events of interest
-    public static final String DIRECTION = "DIRECTION";
-    public static final String OUTGOING = "OUTGOING";
-    public static final String INCOMING = "INCOMING";
-
-    public static final String STARTEND = "STARTEND";
-    public static final String START = "START";
-    public static final String END = "END";
-    public static final String MISSED = "MISSED";
-
-
-    public static final String NUMBER = "NUMBER";
-    public static final String DATE = "DATE";
 
 
     protected void onIncomingCallStarted(Context ctx, String number, Date start) {
-        Toast.makeText(ctx, "Call from:" + number, Toast.LENGTH_SHORT).show();
-        Log.d(TAG, "Call from: " + number + ", starting at " + start.toString());
-        Intent intent = new Intent(ctx, LoggerService.class);
-        intent.putExtra(DIRECTION, INCOMING);
-        intent.putExtra(STARTEND, START);
-        intent.putExtra(NUMBER, number);
-        intent.putExtra(DATE, start.getTime());
-        ctx.startService(intent);
+        PhoneCallRecord record = new PhoneCallRecord(
+                number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.START);
+        Log.d(TAG, record.toString());
     }
 
     protected void onOutgoingCallStarted(Context ctx, String number, Date start) {
-        Log.d(TAG, "Call to: " + number + ", starting at " + start.toString());
-        Intent intent = new Intent(ctx, LoggerService.class);
-        intent.putExtra(DIRECTION, OUTGOING);
-        intent.putExtra(STARTEND, START);
-        intent.putExtra(NUMBER, number);
-        intent.putExtra(DATE, start.getTime());
-        ctx.startService(intent);
+        Log.d(TAG, "onOutgoingCallStarted got number " + number);
+
+        PhoneCallRecord record = new PhoneCallRecord(
+                number, start, PhoneCallRecord.Direction.OUTGOING, PhoneCallRecord.Startend.START);
+        Log.d(TAG, record.toString());
     }
 
     protected void onIncomingCallEnded(Context ctx, String number, Date start, Date end) {
-        Log.d(TAG, "Call from: " + number + ", ending at " + start.toString());
-        Intent intent = new Intent(ctx, LoggerService.class);
-        intent.putExtra(DIRECTION, INCOMING);
-        intent.putExtra(STARTEND, END);
-        intent.putExtra(NUMBER, number);
-        intent.putExtra(DATE, end.getTime());
-        ctx.startService(intent);
+        PhoneCallRecord record = new PhoneCallRecord(
+                number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.END);
+        Log.d(TAG, record.toString());
     }
 
     protected void onOutgoingCallEnded(Context ctx, String number, Date start, Date end) {
-        Log.d(TAG, "Call to: " + number + ", ending at " + start.toString());
-        Intent intent = new Intent(ctx, LoggerService.class);
-        intent.putExtra(DIRECTION, OUTGOING);
-        intent.putExtra(STARTEND, END);
-        intent.putExtra(NUMBER, number);
-        intent.putExtra(DATE, end.getTime());
-        ctx.startService(intent);
+        PhoneCallRecord record = new PhoneCallRecord(
+                number, start, PhoneCallRecord.Direction.OUTGOING, PhoneCallRecord.Startend.END);
+        Log.d(TAG, record.toString());
     }
 
     protected void onMissedCall(Context ctx, String number, Date start) {
-        Log.d(TAG, "Call from: " + number + ", missed at " + start.toString());
-        Intent intent = new Intent(ctx, LoggerService.class);
-        intent.putExtra(DIRECTION, INCOMING);
-        intent.putExtra(STARTEND, MISSED);
-        intent.putExtra(NUMBER, number);
-        intent.putExtra(DATE, start.getTime());
-        ctx.startService(intent);
+        PhoneCallRecord record = new PhoneCallRecord(
+                number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.MISSED);
+        Log.d(TAG, record.toString());
     }
 
     //Deals with actual events
@@ -124,15 +94,23 @@ public class PhonecallReceiver extends BroadcastReceiver {
     //Incoming call-  goes from IDLE to RINGING when it rings, to OFFHOOK when it's answered, to IDLE when its hung up
     //Outgoing call-  goes from IDLE to OFFHOOK when it dials out, to IDLE when hung up
     public void onCallStateChanged(Context context, Intent intent, int state, String number) {
+
+
         if(lastState == state){
             //No change, debounce extras
             return;
         }
+
+        Log.d(TAG, "onCallStateChanged got number " + number);
+
+        // It seems like every case needs number as savedNumber.
+        savedNumber = number;
+
         switch (state) {
             case TelephonyManager.CALL_STATE_RINGING:
                 isIncoming = true;
                 callStartTime = new Date();
-                savedNumber = number;
+                // savedNumber = number;
                 onIncomingCallStarted(context, number, callStartTime);
                 break;
             case TelephonyManager.CALL_STATE_OFFHOOK:
