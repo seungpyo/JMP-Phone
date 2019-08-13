@@ -1,5 +1,6 @@
 package com.example.jmpphone;
 
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import java.io.Serializable;
@@ -17,6 +18,7 @@ public class PhoneCallRecord implements Serializable {
         START, END, MISSED
     };
 
+    private String myNumber;
     private String number;
     private String name = null;
     private long timestamp;
@@ -28,6 +30,8 @@ public class PhoneCallRecord implements Serializable {
 
         Log.d(TAG, "Constructor got number : " + number);
 
+        this.myNumber = MainActivity.myNumber;
+
         this.number = number;
         this.timestamp = timestamp;
         this.direction = direction;
@@ -38,12 +42,15 @@ public class PhoneCallRecord implements Serializable {
         this(number, date.getTime(), direction, startend);
     }
 
+
     @Override
     public String toString() {
         Date date = new Date();
         date.setTime(this.timestamp);
 
         String repr = "";
+
+        repr += "PHONE NO. " + myNumber + "\n";
 
         if (startend == Startend.START) {
             repr += "Start ";
