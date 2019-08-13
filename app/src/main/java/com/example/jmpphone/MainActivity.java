@@ -6,12 +6,18 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.Service;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.BaseColumns;
+import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
@@ -21,9 +27,15 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "MainActivity";
-    public final static int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 11;
 
     public static String myNumber;
+
+    private final String[] PERMISSIONS = {
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_PHONE_STATE
+    };
+    private final static int PERMISSIONS_REQUEST_CODE = 10;
+    private final static int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 11;
 
     Button serviceLaunchBtn;
 
@@ -33,22 +45,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Log.d(TAG, "Main Activity Started");
 
-
-        // Here, thisActivity is the current activity
-        if (ContextCompat.checkSelfPermission(getApplicationContext(),
-                Manifest.permission.READ_PHONE_STATE)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.READ_CONTACTS)) {
-                Log.d(TAG, "Requesting Permission");
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_PHONE_STATE},
-                        MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+        Boolean gotAllPermissions = true;
+        for (String permission : PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(
+                    getApplicationContext(), permission) != PackageManager.PERMISSION_DENIED) {
+                gotAllPermissions = false;
+                ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSIONS_REQUEST_CODE);
             }
-        } else {
+        }
+        if (gotAllPermissions) {
             getMyNumber();
         }
     }
@@ -83,5 +88,8 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, e.toString());
         }
     }
+
+
+
 
 }

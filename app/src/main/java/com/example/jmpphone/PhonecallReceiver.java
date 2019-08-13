@@ -40,8 +40,6 @@ public class PhonecallReceiver extends BroadcastReceiver {
             String stateStr = intent.getExtras().getString(TelephonyManager.EXTRA_STATE);
             String number = intent.getExtras().getString(TelephonyManager.EXTRA_INCOMING_NUMBER);
 
-
-
             int state = 0;
             if(stateStr.equals(TelephonyManager.EXTRA_STATE_IDLE)){
                 state = TelephonyManager.CALL_STATE_IDLE;
@@ -59,7 +57,7 @@ public class PhonecallReceiver extends BroadcastReceiver {
 
     protected void onIncomingCallStarted(Context ctx, String number, Date start) {
         PhoneCallRecord record = new PhoneCallRecord(
-                number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.START);
+                ctx, number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.START);
         Log.d(TAG, record.toString());
     }
 
@@ -67,25 +65,25 @@ public class PhonecallReceiver extends BroadcastReceiver {
         Log.d(TAG, "onOutgoingCallStarted got number " + number);
 
         PhoneCallRecord record = new PhoneCallRecord(
-                number, start, PhoneCallRecord.Direction.OUTGOING, PhoneCallRecord.Startend.START);
+                ctx, number, start, PhoneCallRecord.Direction.OUTGOING, PhoneCallRecord.Startend.START);
         Log.d(TAG, record.toString());
     }
 
     protected void onIncomingCallEnded(Context ctx, String number, Date start, Date end) {
         PhoneCallRecord record = new PhoneCallRecord(
-                number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.END);
+                ctx, number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.END);
         Log.d(TAG, record.toString());
     }
 
     protected void onOutgoingCallEnded(Context ctx, String number, Date start, Date end) {
         PhoneCallRecord record = new PhoneCallRecord(
-                number, start, PhoneCallRecord.Direction.OUTGOING, PhoneCallRecord.Startend.END);
+                ctx, number, start, PhoneCallRecord.Direction.OUTGOING, PhoneCallRecord.Startend.END);
         Log.d(TAG, record.toString());
     }
 
     protected void onMissedCall(Context ctx, String number, Date start) {
         PhoneCallRecord record = new PhoneCallRecord(
-                number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.MISSED);
+                ctx, number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.MISSED);
         Log.d(TAG, record.toString());
     }
 
