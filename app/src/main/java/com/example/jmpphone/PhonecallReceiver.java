@@ -7,11 +7,15 @@ package com.example.jmpphone;
 import java.util.Date;
 
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
 import android.util.Log;
-import android.widget.Toast;
 
 public class PhonecallReceiver extends BroadcastReceiver {
 
@@ -20,9 +24,11 @@ public class PhonecallReceiver extends BroadcastReceiver {
     private static String TAG = "PhonecallReceiver";
 
     private static int lastState = TelephonyManager.CALL_STATE_IDLE;
+
     private static Date callStartTime;
     private static boolean isIncoming;
     private static String savedNumber;  //because the passed incoming is only valid in ringing
+    private static String savedName;
 
 
     @Override
@@ -56,35 +62,72 @@ public class PhonecallReceiver extends BroadcastReceiver {
 
 
     protected void onIncomingCallStarted(Context ctx, String number, Date start) {
-        PhoneCallRecord record = new PhoneCallRecord(
-                ctx, number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.START);
-        Log.d(TAG, record.toString());
+        savedNumber = number;
+        savedName = getContactDisplayNameByNumber(ctx, savedNumber);
+        callStartTime = new Date();
     }
 
     protected void onOutgoingCallStarted(Context ctx, String number, Date start) {
-        Log.d(TAG, "onOutgoingCallStarted got number " + number);
-
-        PhoneCallRecord record = new PhoneCallRecord(
-                ctx, number, start, PhoneCallRecord.Direction.OUTGOING, PhoneCallRecord.Startend.START);
-        Log.d(TAG, record.toString());
+        savedNumber = number;
+        savedName = getContactDisplayNameByNumber(ctx, savedNumber);
+        callStartTime = new Date();
     }
 
     protected void onIncomingCallEnded(Context ctx, String number, Date start, Date end) {
-        PhoneCallRecord record = new PhoneCallRecord(
-                ctx, number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.END);
+        Long startl = start.getTime();
+        Long endl = end.getTime();
+        PhonecallRecord record = new PhonecallRecord();
+
+        record.setStart(startl);
+        record.setEnd(endl);
+        record.setIncoming(true);
+        record.setMyNumber(MainActivity.myNumber);
+        record.setName(savedName);
+        record.setNumber(savedNumber);
+        record.setMissed(false);
+
         Log.d(TAG, record.toString());
+
+        PhonecallRecordSendTask txTask = new PhonecallRecordSendTask("http://172.30.1.22:5555/", record);
+        txTask.execute();
     }
 
     protected void onOutgoingCallEnded(Context ctx, String number, Date start, Date end) {
-        PhoneCallRecord record = new PhoneCallRecord(
-                ctx, number, start, PhoneCallRecord.Direction.OUTGOING, PhoneCallRecord.Startend.END);
+        Long startl = start.getTime();
+        Long endl = end.getTime();
+        PhonecallRecord record = new PhonecallRecord();
+
+        record.setStart(startl);
+        record.setEnd(endl);
+        record.setIncoming(true);
+        record.setMyNumber(MainActivity.myNumber);
+        record.setName(savedName);
+        record.setNumber(savedNumber);
+        record.setMissed(false);
+
         Log.d(TAG, record.toString());
+
+        PhonecallRecordSendTask txTask = new PhonecallRecordSendTask("http://172.30.1.22:5555/", record);
+        txTask.execute();
     }
 
     protected void onMissedCall(Context ctx, String number, Date start) {
-        PhoneCallRecord record = new PhoneCallRecord(
-                ctx, number, start, PhoneCallRecord.Direction.INCOMING, PhoneCallRecord.Startend.MISSED);
+        Long startl = start.getTime();
+        Long endl = start.getTime();
+        PhonecallRecord record = new PhonecallRecord();
+
+        record.setStart(startl);
+        record.setEnd(endl);
+        record.setIncoming(true);
+        record.setMyNumber(MainActivity.myNumber);
+        record.setName(savedName);
+        record.setNumber(savedNumber);
+        record.setMissed(false);
+
         Log.d(TAG, record.toString());
+
+        PhonecallRecordSendTask txTask = new PhonecallRecordSendTask("http://172.30.1.22:5555/", record);
+        txTask.execute();
     }
 
     //Deals with actual events
@@ -134,5 +177,33 @@ public class PhonecallReceiver extends BroadcastReceiver {
                 break;
         }
         lastState = state;
+
+
+
     }
+
+
+    private static final String[] CONTACT_PROJECTION = new String[]{
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME};
+
+    private String getContactDisplayNameByNumber(Context ctx, String number) {
+        String name = "UNKNOWN";
+
+        Uri uri = Uri.withAppendedPath(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_FILTER_URI, Uri.encode(number));
+
+        ContentResolver contentResolver = ctx.getContentResolver();
+        Cursor cursor = contentResolver.query(uri,
+                CONTACT_PROJECTION, null, null, null);
+
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                name = cursor.getString(
+                        cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+            }
+            cursor.close();
+        }
+        return name;
+    }
+
 }

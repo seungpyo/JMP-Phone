@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final String[] PERMISSIONS = {
             Manifest.permission.READ_CONTACTS,
-            Manifest.permission.READ_PHONE_STATE
+            Manifest.permission.READ_PHONE_STATE,
     };
     private final static int PERMISSIONS_REQUEST_CODE = 10;
     private final static int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 11;
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE: {
+            case PERMISSIONS_REQUEST_CODE: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
